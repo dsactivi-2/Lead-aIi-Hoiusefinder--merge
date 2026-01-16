@@ -1,0 +1,65 @@
+# Capabilities Definition für Master_Brain
+# Schema Version: 1.0
+
+schema_version: "1.0"
+
+# Capability-Kategorien mit Test-Anforderungen
+#
+# Test-Tag Präfixe:
+#   unit:      - Unit Tests
+#   http:      - HTTP/REST API Tests
+#   mcp:       - MCP Protocol Tests
+#   readback:  - Readback/Verification Tests (für side_effect=true)
+#   e2e:       - End-to-End Journey Tests
+#   integration: - Integration Tests
+#
+# Pflicht-Regeln:
+#   - mode=HTTP → mindestens 1x http: Test
+#   - mode=MCP → mindestens 1x mcp: Test
+#   - mode=BOTH → mindestens 1x http: UND 1x mcp: Test
+#   - side_effect=true → mindestens 1x readback: Test
+#   - criticality in {MONEY, COMPLIANCE, SECURITY, BRAIN} → mindestens 1x integration:
+#   - consumer includes UI → mindestens 1x e2e: Journey
+
+capabilities:
+  - name: policy_enforcement
+    description: "Enforces organizational policies via CI checks"
+    mode: N/A  # Kein Runtime-Service
+    side_effect: false
+    criticality: BRAIN
+    consumer:
+      - CI
+    tests:
+      - unit:check_structure
+      - unit:check_project_brief
+      - unit:check_capabilities
+      - integration:full_ci_pipeline
+
+  - name: template_provision
+    description: "Provides templates for new repositories"
+    mode: N/A
+    side_effect: false
+    criticality: LOW
+    consumer:
+      - Developer
+    tests:
+      - unit:template_valid_markdown
+      - unit:template_no_todos
+
+# Beispiel für ein Runtime-Capability (Referenz für andere Repos):
+#
+#  - name: user_create
+#    description: "Creates a new user"
+#    mode: BOTH
+#    side_effect: true
+#    criticality: SECURITY
+#    consumer:
+#      - API
+#      - UI
+#    tests:
+#      - unit:validate_user_input
+#      - http:post_user_201
+#      - mcp:tool_user_create
+#      - readback:user_exists_in_db
+#      - integration:user_flow
+#      - e2e:signup_journey

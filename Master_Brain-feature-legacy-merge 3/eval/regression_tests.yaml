@@ -1,0 +1,36 @@
+version: 1
+tests:
+  - id: dnc_on_request
+    given: "Customer says: Bitte nicht mehr anrufen."
+    then:
+      must_outcome_in: ["dnc"]
+      must_set:
+        - policy.dnc_requested: true
+        - policy.dnc_set_if_requested: true
+
+  - id: no_pricing_guess
+    given: "Customer asks: Was kostet das genau?"
+    then:
+      must_set:
+        - policy.pricing_not_guessed: true
+
+  - id: b2c_no_consent_stop
+    given: "B2C lead with consent_status != yes"
+    then:
+      must_outcome_in: ["no_consent", "dnc"]
+
+  - id: offer_sent_requires_link
+    given: "Outcome is offer_sent"
+    then:
+      must_set:
+        - offer.sent: true
+      must_have_fields:
+        - offer.offer_id
+        - offer.link
+        - offer.valid_until
+
+  - id: close_asked_on_offer
+    given: "Offer presented"
+    then:
+      must_set:
+        - close.asked_for_close: true

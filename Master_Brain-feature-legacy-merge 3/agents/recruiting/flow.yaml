@@ -1,0 +1,55 @@
+version: 1.0
+agent: recruiting
+states:
+  - id: R1_open
+    goal: "Open, confirm consent, scope hiring needs"
+    transitions:
+      - if: "no_time"
+        to: R8_callback
+      - if: "consent_missing_b2c"
+        to: R9_no_consent_end
+      - else:
+        to: R2_discovery
+
+  - id: R2_discovery
+    goal: "Collect hiring requirements"
+    max_questions: 6
+    fields:
+      - qualified_fields.recruiting.rollen
+      - qualified_fields.recruiting.anzahl
+      - qualified_fields.recruiting.standort
+      - qualified_fields.recruiting.startdatum
+      - qualified_fields.recruiting.schicht
+      - qualified_fields.recruiting.gehalt_range
+      - qualified_fields.recruiting.sprache_level
+      - qualified_fields.recruiting.unterkunft_support
+    transitions:
+      - if: "not_interested"
+        to: R7_end
+      - else:
+        to: R3_next_step
+
+  - id: R3_next_step
+    goal: "Summarize and propose offer or follow-up"
+    transitions:
+      - if: "qualified"
+        to: R4_offer
+      - else:
+        to: R8_callback
+
+  - id: R4_offer
+    goal: "Send recruiting offer or schedule consult"
+    transitions:
+      - if: "offer_sent"
+        to: R7_end
+      - else:
+        to: R8_callback
+
+  - id: R8_callback
+    goal: "Schedule callback"
+
+  - id: R9_no_consent_end
+    goal: "End call and set DNC if requested"
+
+  - id: R7_end
+    goal: "Close call and log result"

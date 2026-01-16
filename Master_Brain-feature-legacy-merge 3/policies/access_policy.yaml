@@ -1,0 +1,47 @@
+version: 1
+defaults:
+  must_cite_sources: true
+  conflict_policy:
+    prefer_newer: true
+    on_conflict: create_open_question
+
+kb:
+  priority_order:
+    - tags_any: ["internal", "integration_note"]
+    - tags_any: ["official"]
+    - tags_any: ["experiment"]
+
+rules:
+  - name: prefer_internal_for_sipgate
+    when:
+      topic_in: ["telephony", "sip", "sipgate"]
+    retrieve:
+      first:
+        path_prefix: "kb/internal/integrations/"
+      then:
+        path_prefix: "kb/vendors/sipgate/"
+      then2:
+        path_prefix_any:
+          - "kb/vendors/openai/"
+          - "kb/vendors/anthropic/"
+    response:
+      must_separate_vendors_in_output: true
+
+  - name: vendor_separation
+    when:
+      any: true
+    response:
+      if_multiple_vendors: "separate_sections_and_cite_each"
+
+tool_rules:
+  - name: no_pricing_guesses
+    when:
+      mentions_any: ["preis", "kosten", "tarif", "angebot", "rabatt"]
+    require_tool: "get_pricing"
+    forbid_free_text_guess: true
+
+  - name: pii_never_via_kb
+    when:
+      mentions_any: ["personenbezogen", "bewerber", "kandidat", "geburtsdatum", "adresse"]
+    forbid_kb: true
+    require_tool: "crm_read_minimal"

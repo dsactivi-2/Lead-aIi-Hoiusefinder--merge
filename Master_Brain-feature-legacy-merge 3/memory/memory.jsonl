@@ -1,0 +1,2 @@
+{"id":"mem_0001","ts":"2026-01-13T09:00:00Z","source":"seed","type":"policy","tags":["consent","dnc"],"content":"DNC and consent rules are hard stops.","pii":false,"consent":false}
+{"id":"mem_0002","ts":"2026-01-13T09:10:00Z","source":"seed","type":"process","tags":["eval","regression"],"content":"Any flow change requires scorecard and regression checks.","pii":false,"consent":false}

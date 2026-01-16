@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MemoryEntry",
+  "type": "object",
+  "required": ["id", "ts", "source", "type", "content"],
+  "properties": {
+    "id": { "type": "string" },
+    "ts": { "type": "string" },
+    "source": { "type": "string" },
+    "type": { "type": "string" },
+    "tags": { "type": "array", "items": { "type": "string" } },
+    "content": { "type": "string" },
+    "pii": { "type": "boolean" },
+    "consent": { "type": "boolean" }
+  }
+}

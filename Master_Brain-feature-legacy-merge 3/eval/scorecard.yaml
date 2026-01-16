@@ -1,0 +1,52 @@
+version: 1
+checks:
+  - id: consent_ok
+    title: Consent geprueft/OK
+    severity: hard
+    pass_if:
+      field: policy.consent_ok
+      equals: true
+
+  - id: dnc_respected
+    title: Opt-out/DNC korrekt umgesetzt
+    severity: hard
+    pass_if:
+      all:
+        - field: policy.dnc_requested
+          implies:
+            field: policy.dnc_set_if_requested
+            equals: true
+
+  - id: pricing_not_guessed
+    title: Pricing nicht geraten
+    severity: hard
+    pass_if:
+      field: policy.pricing_not_guessed
+      equals: true
+
+  - id: close_asked
+    title: Close aktiv gefragt
+    severity: soft
+    pass_if:
+      field: close.asked_for_close
+      equals: true
+
+  - id: offer_link_sent_when_offer
+    title: Offer-Link gesendet (wenn Offer)
+    severity: soft
+    pass_if:
+      all:
+        - field: outcome
+          in: ["offer_sent", "won"]
+        - field: offer.sent
+          equals: true
+
+  - id: followup_scheduled_when_needed
+    title: Follow-up gesetzt (wenn nicht closed)
+    severity: soft
+    pass_if:
+      all:
+        - field: outcome
+          in: ["callback", "offer_sent", "qualified"]
+        - field: followup.next_followup_at
+          exists: true

@@ -1,0 +1,54 @@
+version: 1
+
+# Single Source of Truth fuer Tool Tests.
+# CI-Regel: jedes Tool muss mindestens 1 Mock- und 1 Real-Test haben.
+# PR: mock full + real smoke subset
+# Merge-Gate: real full
+
+registry:
+  tools:
+    - name: brain.health
+      kind: http
+      critical: true
+      tests:
+        mock:
+          - id: mock:health.schema
+            invariants:
+              - json_has: [status, timestamp]
+        real:
+          - id: real:health.ok
+            mode: smoke
+            invariants:
+              - http_status: 200
+              - json_has: [status, timestamp]
+
+    - name: brain.memory.append
+      kind: http
+      critical: true
+      tests:
+        mock:
+          - id: mock:memory.append.payload
+            invariants:
+              - requires_fields: [type, content]
+        real:
+          - id: real:memory.append.readback
+            mode: full
+            invariants:
+              - http_status: 201
+              - json_has: [id, type, content, created_at]
+              - readback_contains_id: true
+
+    - name: brain.memory.recent
+      kind: http
+      critical: true
+      tests:
+        mock:
+          - id: mock:memory.recent.query
+            invariants:
+              - supports_query_params: [limit, type]
+        real:
+          - id: real:memory.recent.ok
+            mode: smoke
+            invariants:
+              - http_status: 200
+              - json_is_array: true
