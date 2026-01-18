@@ -257,6 +257,297 @@ server.tool("lb_server_stats", {}, async () => {
 });
 
 // ============================================
+// ATU RELOCATION TOOLS (lb_*)
+// ============================================
+
+server.tool(
+  "lb_vermieter",
+  {
+    city: z.string().optional(),
+    status: z.enum(["new", "contacted", "negotiating", "active", "inactive"]).optional(),
+    limit: z.number().optional(),
+    baseUrl: z.string().optional(),
+  },
+  async ({ city, status, limit, baseUrl }) => {
+    const params = new URLSearchParams();
+    if (city) params.set("city", city);
+    if (status) params.set("status", status);
+    if (limit) params.set("limit", String(limit));
+    const out = await httpJson(`${baseUrl ?? LB_BACKEND_BASE}/v1/vermieter${params.toString() ? "?" + params : ""}`);
+    return { content: [{ type: "text", text: JSON.stringify(out, null, 2) }] };
+  }
+);
+
+server.tool(
+  "lb_vermieter_create",
+  {
+    name: z.string().min(1),
+    phone: z.string().min(1),
+    company: z.string().optional(),
+    email: z.string().optional(),
+    address: z.string().optional(),
+    city: z.string().optional(),
+    postal_code: z.string().optional(),
+    languages: z.array(z.string()).optional(),
+    notes: z.string().optional(),
+    baseUrl: z.string().optional(),
+  },
+  async ({ name, phone, company, email, address, city, postal_code, languages, notes, baseUrl }) => {
+    const out = await httpJson(`${baseUrl ?? LB_BACKEND_BASE}/v1/vermieter`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, phone, company, email, address, city: city ?? "München", postal_code, languages: languages ?? ["de"], notes }),
+    });
+    return { content: [{ type: "text", text: JSON.stringify(out, null, 2) }] };
+  }
+);
+
+server.tool(
+  "lb_housing",
+  {
+    city: z.string().optional(),
+    type: z.enum(["apartment", "room", "shared", "house"]).optional(),
+    max_price: z.number().optional(),
+    min_size: z.number().optional(),
+    is_available: z.boolean().optional(),
+    mietvertrag_possible: z.boolean().optional(),
+    limit: z.number().optional(),
+    baseUrl: z.string().optional(),
+  },
+  async ({ city, type, max_price, min_size, is_available, mietvertrag_possible, limit, baseUrl }) => {
+    const params = new URLSearchParams();
+    if (city) params.set("city", city);
+    if (type) params.set("type", type);
+    if (max_price) params.set("max_price", String(max_price));
+    if (min_size) params.set("min_size", String(min_size));
+    if (is_available !== undefined) params.set("is_available", String(is_available));
+    if (mietvertrag_possible !== undefined) params.set("mietvertrag_possible", String(mietvertrag_possible));
+    if (limit) params.set("limit", String(limit));
+    const out = await httpJson(`${baseUrl ?? LB_BACKEND_BASE}/v1/housing${params.toString() ? "?" + params : ""}`);
+    return { content: [{ type: "text", text: JSON.stringify(out, null, 2) }] };
+  }
+);
+
+server.tool(
+  "lb_housing_create",
+  {
+    vermieter_id: z.string().min(1),
+    title: z.string().min(1),
+    type: z.enum(["apartment", "room", "shared", "house"]),
+    price_monthly: z.number(),
+    city: z.string().optional(),
+    address: z.string().optional(),
+    postal_code: z.string().optional(),
+    district: z.string().optional(),
+    size_sqm: z.number().optional(),
+    rooms: z.number().optional(),
+    max_persons: z.number().optional(),
+    price_weekly: z.number().optional(),
+    deposit: z.number().optional(),
+    utilities_included: z.boolean().optional(),
+    available_from: z.string().optional(),
+    min_stay_days: z.number().optional(),
+    amenities: z.array(z.string()).optional(),
+    mietvertrag_possible: z.boolean().optional(),
+    anmeldung_possible: z.boolean().optional(),
+    baseUrl: z.string().optional(),
+  },
+  async (params) => {
+    const { baseUrl, ...body } = params;
+    const out = await httpJson(`${baseUrl ?? LB_BACKEND_BASE}/v1/housing`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...body, city: body.city ?? "München", rooms: body.rooms ?? 1, max_persons: body.max_persons ?? 1 }),
+    });
+    return { content: [{ type: "text", text: JSON.stringify(out, null, 2) }] };
+  }
+);
+
+server.tool(
+  "lb_candidates",
+  {
+    status: z.enum(["new", "searching", "negotiating", "found", "moved_in", "cancelled"]).optional(),
+    employer: z.string().optional(),
+    limit: z.number().optional(),
+    baseUrl: z.string().optional(),
+  },
+  async ({ status, employer, limit, baseUrl }) => {
+    const params = new URLSearchParams();
+    if (status) params.set("status", status);
+    if (employer) params.set("employer", employer);
+    if (limit) params.set("limit", String(limit));
+    const out = await httpJson(`${baseUrl ?? LB_BACKEND_BASE}/v1/candidates${params.toString() ? "?" + params : ""}`);
+    return { content: [{ type: "text", text: JSON.stringify(out, null, 2) }] };
+  }
+);
+
+server.tool(
+  "lb_candidate_create",
+  {
+    name: z.string().min(1),
+    phone: z.string().min(1),
+    email: z.string().optional(),
+    nationality: z.string().optional(),
+    language_skills: z.array(z.string()).optional(),
+    employer: z.string().optional(),
+    job_position: z.string().optional(),
+    job_location: z.string().optional(),
+    job_start_date: z.string().optional(),
+    arrival_date: z.string().optional(),
+    preferred_city: z.string().optional(),
+    budget_max: z.number().optional(),
+    family_size: z.number().optional(),
+    needs_mietvertrag: z.boolean().optional(),
+    needs_anmeldung: z.boolean().optional(),
+    move_in_date: z.string().optional(),
+    notes: z.string().optional(),
+    baseUrl: z.string().optional(),
+  },
+  async (params) => {
+    const { baseUrl, ...body } = params;
+    const out = await httpJson(`${baseUrl ?? LB_BACKEND_BASE}/v1/candidates`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...body,
+        nationality: body.nationality ?? "BA",
+        language_skills: body.language_skills ?? ["de", "bs"],
+        employer: body.employer ?? "ATU",
+        job_location: body.job_location ?? "München",
+        preferred_city: body.preferred_city ?? "München",
+        budget_max: body.budget_max ?? 800,
+        family_size: body.family_size ?? 1,
+        needs_mietvertrag: body.needs_mietvertrag ?? true,
+        needs_anmeldung: body.needs_anmeldung ?? true,
+      }),
+    });
+    return { content: [{ type: "text", text: JSON.stringify(out, null, 2) }] };
+  }
+);
+
+server.tool(
+  "lb_relocation",
+  {
+    status: z.enum(["pending", "searching", "found", "completed", "cancelled"]).optional(),
+    priority: z.enum(["urgent", "high", "normal", "low"]).optional(),
+    limit: z.number().optional(),
+    baseUrl: z.string().optional(),
+  },
+  async ({ status, priority, limit, baseUrl }) => {
+    const params = new URLSearchParams();
+    if (status) params.set("status", status);
+    if (priority) params.set("priority", priority);
+    if (limit) params.set("limit", String(limit));
+    const out = await httpJson(`${baseUrl ?? LB_BACKEND_BASE}/v1/relocation${params.toString() ? "?" + params : ""}`);
+    return { content: [{ type: "text", text: JSON.stringify(out, null, 2) }] };
+  }
+);
+
+server.tool(
+  "lb_negotiations",
+  {
+    status: z.enum(["pending", "calling", "in_progress", "accepted", "rejected", "cancelled"]).optional(),
+    candidate_id: z.string().optional(),
+    vermieter_id: z.string().optional(),
+    limit: z.number().optional(),
+    baseUrl: z.string().optional(),
+  },
+  async ({ status, candidate_id, vermieter_id, limit, baseUrl }) => {
+    const params = new URLSearchParams();
+    if (status) params.set("status", status);
+    if (candidate_id) params.set("candidate_id", candidate_id);
+    if (vermieter_id) params.set("vermieter_id", vermieter_id);
+    if (limit) params.set("limit", String(limit));
+    const out = await httpJson(`${baseUrl ?? LB_BACKEND_BASE}/v1/negotiations${params.toString() ? "?" + params : ""}`);
+    return { content: [{ type: "text", text: JSON.stringify(out, null, 2) }] };
+  }
+);
+
+server.tool(
+  "lb_negotiation_create",
+  {
+    candidate_id: z.string().min(1),
+    vermieter_id: z.string().min(1),
+    housing_id: z.string().min(1),
+    relocation_request_id: z.string().optional(),
+    offered_price: z.number().optional(),
+    baseUrl: z.string().optional(),
+  },
+  async ({ candidate_id, vermieter_id, housing_id, relocation_request_id, offered_price, baseUrl }) => {
+    const out = await httpJson(`${baseUrl ?? LB_BACKEND_BASE}/v1/negotiations`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ candidate_id, vermieter_id, housing_id, relocation_request_id, offered_price }),
+    });
+    return { content: [{ type: "text", text: JSON.stringify(out, null, 2) }] };
+  }
+);
+
+server.tool(
+  "lb_deals",
+  {
+    status: z.enum(["pending", "signed", "active", "completed", "cancelled"]).optional(),
+    limit: z.number().optional(),
+    baseUrl: z.string().optional(),
+  },
+  async ({ status, limit, baseUrl }) => {
+    const params = new URLSearchParams();
+    if (status) params.set("status", status);
+    if (limit) params.set("limit", String(limit));
+    const out = await httpJson(`${baseUrl ?? LB_BACKEND_BASE}/v1/deals${params.toString() ? "?" + params : ""}`);
+    return { content: [{ type: "text", text: JSON.stringify(out, null, 2) }] };
+  }
+);
+
+server.tool(
+  "lb_search_housing",
+  {
+    candidate_id: z.string().min(1),
+    auto_negotiate: z.boolean().optional(),
+    baseUrl: z.string().optional(),
+  },
+  async ({ candidate_id, auto_negotiate, baseUrl }) => {
+    const out = await httpJson(`${baseUrl ?? LB_BACKEND_BASE}/v1/agents/search-housing`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ candidate_id, auto_negotiate: auto_negotiate ?? false }),
+    });
+    return { content: [{ type: "text", text: JSON.stringify(out, null, 2) }] };
+  }
+);
+
+server.tool(
+  "lb_trigger_call",
+  {
+    candidate_id: z.string().min(1),
+    vermieter_id: z.string().min(1),
+    housing_id: z.string().optional(),
+    agent_name: z.string().optional(),
+    baseUrl: z.string().optional(),
+  },
+  async ({ candidate_id, vermieter_id, housing_id, agent_name, baseUrl }) => {
+    const out = await httpJson(`${baseUrl ?? LB_BACKEND_BASE}/v1/agents/trigger-call`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ candidate_id, vermieter_id, housing_id, agent_name: agent_name ?? "relocation-agent" }),
+    });
+    return { content: [{ type: "text", text: JSON.stringify(out, null, 2) }] };
+  }
+);
+
+server.tool(
+  "lb_campaign_stats",
+  {
+    id: z.string().min(1),
+    baseUrl: z.string().optional(),
+  },
+  async ({ id, baseUrl }) => {
+    const out = await httpJson(`${baseUrl ?? LB_BACKEND_BASE}/v1/campaigns/${id}/stats`);
+    return { content: [{ type: "text", text: JSON.stringify(out, null, 2) }] };
+  }
+);
+
+// ============================================
 // CLOUD AGENTS TOOLS (ca_*)
 // ============================================
 
