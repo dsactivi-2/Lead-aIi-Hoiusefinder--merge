@@ -730,3 +730,66 @@ export type DealsResponse = z.infer<typeof DealsResponseSchema>
 
 export type HousingSearchResult = z.infer<typeof HousingSearchResultSchema>
 export type TriggerCallResponse = z.infer<typeof TriggerCallResponseSchema>
+
+// ============================================================================
+// SCRAPER - Portal Scraping
+// ============================================================================
+
+export const PortalTypeSchema = z.enum(["housing", "job"])
+
+export const PortalInfoSchema = z.object({
+  key: z.string(),
+  name: z.string(),
+  type: PortalTypeSchema,
+  requiresLogin: z.boolean(),
+})
+
+export const PortalsResponseSchema = z.object({
+  portals: z.array(PortalInfoSchema),
+})
+
+export const ScrapeResultSchema = z.object({
+  title: z.string(),
+  price: z.string(),
+  location: z.string(),
+  size: z.string().optional(),
+  rooms: z.string().optional(),
+  link: z.string(),
+  portal: z.string(),
+  scrapedAt: z.string(),
+})
+
+export const ScrapeResponseSchema = z.object({
+  success: z.boolean(),
+  portal: z.string(),
+  query: z.record(z.unknown()),
+  results: z.array(ScrapeResultSchema),
+  totalFound: z.number(),
+  error: z.string().optional(),
+  requiresLogin: z.boolean().optional(),
+  loginUrl: z.string().optional(),
+})
+
+export const ScraperLoginResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+  portal: z.string(),
+})
+
+export const CustomScrapeResponseSchema = z.object({
+  success: z.boolean(),
+  url: z.string(),
+  results: z.array(z.record(z.string())),
+  totalFound: z.number(),
+  error: z.string().optional(),
+})
+
+// === Scraper Type Exports ===
+
+export type PortalType = z.infer<typeof PortalTypeSchema>
+export type PortalInfo = z.infer<typeof PortalInfoSchema>
+export type PortalsResponse = z.infer<typeof PortalsResponseSchema>
+export type ScrapeResult = z.infer<typeof ScrapeResultSchema>
+export type ScrapeResponse = z.infer<typeof ScrapeResponseSchema>
+export type ScraperLoginResponse = z.infer<typeof ScraperLoginResponseSchema>
+export type CustomScrapeResponse = z.infer<typeof CustomScrapeResponseSchema>

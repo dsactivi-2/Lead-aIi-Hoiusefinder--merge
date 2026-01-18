@@ -104,6 +104,15 @@ import {
   type DealStatus,
   type HousingSearchResult,
   type TriggerCallResponse,
+  // Scraper Schemas
+  PortalsResponseSchema,
+  ScrapeResponseSchema,
+  ScraperLoginResponseSchema,
+  CustomScrapeResponseSchema,
+  type PortalsResponse,
+  type ScrapeResponse,
+  type ScraperLoginResponse,
+  type CustomScrapeResponse,
 } from "./contracts"
 import { classifyError, type ApiError } from "./errors"
 
@@ -1145,4 +1154,85 @@ export async function triggerVermieterCall(data: {
     { method: "POST", body: JSON.stringify(data) },
     TriggerCallResponseSchema,
   )
+}
+
+// ============================================================================
+// SCRAPER API - Portal Scraping
+// ============================================================================
+
+// GET /v1/scraper/portals
+export async function getScraperPortals(): Promise<PortalsResponse> {
+  const url = `${RUNTIME.apiBaseUrl}/v1/scraper/portals`
+  return fetchWithValidation(url, { method: "GET" }, PortalsResponseSchema)
+}
+
+// POST /v1/scraper/housing
+export async function scrapeHousing(data: {
+  portal: string
+  city?: string
+  maxPrice?: number
+  minSize?: number
+  rooms?: number
+  maxPages?: number
+}): Promise<ScrapeResponse> {
+  const url = `${RUNTIME.apiBaseUrl}/v1/scraper/housing`
+  return fetchWithValidation(
+    url,
+    { method: "POST", body: JSON.stringify(data) },
+    ScrapeResponseSchema,
+  )
+}
+
+// POST /v1/scraper/jobs
+export async function scrapeJobs(data: {
+  portal: string
+  keyword?: string
+  city?: string
+  maxPages?: number
+}): Promise<ScrapeResponse> {
+  const url = `${RUNTIME.apiBaseUrl}/v1/scraper/jobs`
+  return fetchWithValidation(
+    url,
+    { method: "POST", body: JSON.stringify(data) },
+    ScrapeResponseSchema,
+  )
+}
+
+// POST /v1/scraper/login
+export async function setScraperCredentials(data: {
+  portal: string
+  username: string
+  password: string
+}): Promise<ScraperLoginResponse> {
+  const url = `${RUNTIME.apiBaseUrl}/v1/scraper/login`
+  return fetchWithValidation(
+    url,
+    { method: "POST", body: JSON.stringify(data) },
+    ScraperLoginResponseSchema,
+  )
+}
+
+// POST /v1/scraper/custom
+export async function scrapeCustomUrl(data: {
+  url: string
+  selectors: {
+    container: string
+    fields: Record<string, string>
+  }
+  maxPages?: number
+  nextPageSelector?: string
+}): Promise<CustomScrapeResponse> {
+  const url = `${RUNTIME.apiBaseUrl}/v1/scraper/custom`
+  return fetchWithValidation(
+    url,
+    { method: "POST", body: JSON.stringify(data) },
+    CustomScrapeResponseSchema,
+  )
+}
+
+// POST /v1/scraper/close
+export async function closeScraperBrowser(): Promise<{ success: boolean; message: string }> {
+  const url = `${RUNTIME.apiBaseUrl}/v1/scraper/close`
+  const response = await fetch(url, { method: "POST" })
+  return response.json()
 }
