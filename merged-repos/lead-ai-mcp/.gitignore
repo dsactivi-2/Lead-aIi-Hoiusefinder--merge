@@ -1,0 +1,7 @@
+node_modules/
+.env
+*.key
+vonage_private.key
+data/users.json
+.DS_Store
+*.log
