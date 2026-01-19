@@ -1,0 +1,221 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://activi.dev/schemas/run-report.json",
+  "title": "Agent Run Report",
+  "description": "Schema for CLI agent run reports (Claude, Codex, etc.)",
+  "type": "object",
+  "required": [
+    "run_id",
+    "agent",
+    "timestamp",
+    "summary",
+    "decisions",
+    "open_questions",
+    "risks",
+    "changes",
+    "next_actions",
+    "refs",
+    "redactions_done"
+  ],
+  "properties": {
+    "run_id": {
+      "type": "string",
+      "description": "Unique identifier for this run (format: agent-YYYYMMDD-HHMMSS-random)",
+      "pattern": "^[a-z0-9_-]+-[0-9]{8}-[0-9]{6}-[a-z0-9]+$"
+    },
+    "agent": {
+      "type": "string",
+      "description": "Agent name/identifier",
+      "enum": ["claude-cli-1", "claude-cli-2", "codex-cli-1", "codex-cli-2", "codex-cli-3", "codex-cli-4", "supervisor", "custom"]
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when run completed"
+    },
+    "duration_seconds": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Run duration in seconds"
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 500,
+      "description": "Brief summary of what was accomplished"
+    },
+    "decisions": {
+      "type": "array",
+      "description": "Architectural/implementation decisions made",
+      "items": {
+        "type": "object",
+        "required": ["decision", "rationale"],
+        "properties": {
+          "decision": {
+            "type": "string",
+            "description": "What was decided"
+          },
+          "rationale": {
+            "type": "string",
+            "description": "Why this decision was made"
+          },
+          "alternatives_considered": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "reversible": {
+            "type": "boolean",
+            "default": true
+          }
+        }
+      }
+    },
+    "open_questions": {
+      "type": "array",
+      "description": "Questions that need clarification or follow-up",
+      "items": {
+        "type": "object",
+        "required": ["question"],
+        "properties": {
+          "question": {
+            "type": "string",
+            "description": "The open question"
+          },
+          "context": {
+            "type": "string",
+            "description": "Additional context"
+          },
+          "priority": {
+            "type": "string",
+            "enum": ["high", "medium", "low"],
+            "default": "medium"
+          },
+          "blocking": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      }
+    },
+    "risks": {
+      "type": "array",
+      "description": "Identified risks or concerns",
+      "items": {
+        "type": "object",
+        "required": ["risk"],
+        "properties": {
+          "risk": {
+            "type": "string",
+            "description": "Description of the risk"
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["critical", "high", "medium", "low"],
+            "default": "medium"
+          },
+          "mitigation": {
+            "type": "string",
+            "description": "Proposed mitigation"
+          }
+        }
+      }
+    },
+    "changes": {
+      "type": "array",
+      "description": "Files/resources modified during this run",
+      "items": {
+        "type": "object",
+        "required": ["path", "action"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "File or resource path"
+          },
+          "action": {
+            "type": "string",
+            "enum": ["created", "modified", "deleted", "moved"]
+          },
+          "description": {
+            "type": "string",
+            "description": "What was changed"
+          }
+        }
+      }
+    },
+    "next_actions": {
+      "type": "array",
+      "description": "Recommended follow-up actions",
+      "items": {
+        "type": "object",
+        "required": ["action"],
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "What should be done next"
+          },
+          "assignee": {
+            "type": "string",
+            "description": "Who should do this (agent name or 'human')"
+          },
+          "priority": {
+            "type": "string",
+            "enum": ["immediate", "high", "normal", "low"],
+            "default": "normal"
+          }
+        }
+      }
+    },
+    "refs": {
+      "type": "array",
+      "description": "References (commits, URLs, files, etc.)",
+      "items": {
+        "type": "object",
+        "required": ["type", "value"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["commit", "url", "file", "pr", "issue", "doc"]
+          },
+          "value": {
+            "type": "string",
+            "description": "The reference value (SHA, URL, path)"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "learnings": {
+      "type": "array",
+      "description": "Insights or learnings discovered during this run",
+      "items": {
+        "type": "object",
+        "required": ["learning"],
+        "properties": {
+          "learning": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "enum": ["technical", "process", "architecture", "bug", "optimization"]
+          }
+        }
+      }
+    },
+    "redactions_done": {
+      "type": "boolean",
+      "description": "Confirms that secrets/PII have been removed from this report"
+    },
+    "exit_status": {
+      "type": "string",
+      "enum": ["success", "partial", "failed", "blocked"],
+      "default": "success"
+    },
+    "error_message": {
+      "type": "string",
+      "description": "Error details if exit_status is not success"
+    }
+  },
+  "additionalProperties": false
+}

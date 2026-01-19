@@ -1,0 +1,57 @@
+version: 1.0
+agent: solar
+states:
+  - id: S1_open
+    goal: "Open, confirm consent, ask for time"
+    transitions:
+      - if: "no_time"
+        to: S8_callback
+      - if: "consent_missing_b2c"
+        to: S9_no_consent_end
+      - else:
+        to: S2_discovery
+
+  - id: S2_discovery
+    goal: "Collect qualification fields"
+    max_questions: 6
+    fields:
+      - qualified_fields.solar.segment
+      - qualified_fields.solar.plz
+      - qualified_fields.solar.verbrauch_kwh_year
+      - qualified_fields.solar.stromkosten_month_eur
+      - qualified_fields.solar.objektart
+      - qualified_fields.solar.dachtyp
+      - qualified_fields.solar.flaeche_grob
+      - qualified_fields.solar.speicher_interesse
+      - qualified_fields.solar.wallbox_interesse
+      - qualified_fields.solar.zeitrahmen
+    transitions:
+      - if: "not_interested"
+        to: S7_end
+      - else:
+        to: S3_next_step
+
+  - id: S3_next_step
+    goal: "Summarize and propose follow-up or offer"
+    transitions:
+      - if: "qualified"
+        to: S4_offer
+      - else:
+        to: S8_callback
+
+  - id: S4_offer
+    goal: "Send offer or schedule consult"
+    transitions:
+      - if: "offer_sent"
+        to: S7_end
+      - else:
+        to: S8_callback
+
+  - id: S8_callback
+    goal: "Schedule callback"
+
+  - id: S9_no_consent_end
+    goal: "End call and set DNC if requested"
+
+  - id: S7_end
+    goal: "Close call and log result"

@@ -1,0 +1,22 @@
+# Secrets - NIEMALS committen
+.env
+*.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp
+*.tmp
+*.temp
+_temp/
+
+# Logs
+*.log
+
+# IDE
+.idea/
+.vscode/
+*.swp

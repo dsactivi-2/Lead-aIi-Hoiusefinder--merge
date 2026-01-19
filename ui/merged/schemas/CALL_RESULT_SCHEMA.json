@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CallResult",
+  "type": "object",
+  "required": ["agent", "lead_id", "campaign", "outcome", "policy", "timestamps"],
+  "properties": {
+    "agent": { "type": "string", "enum": ["solar", "recruiting", "callcenter"] },
+    "lead_id": { "type": "string" },
+    "campaign": { "type": "string" },
+    "outcome": {
+      "type": "string",
+      "enum": [
+        "no_answer",
+        "callback",
+        "not_interested",
+        "qualified",
+        "offer_sent",
+        "won",
+        "lost",
+        "dnc",
+        "no_consent",
+        "wrong_number",
+        "error"
+      ]
+    },
+    "contact": {
+      "type": "object",
+      "properties": {
+        "company": { "type": "string" },
+        "name": { "type": "string" },
+        "role": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" }
+      }
+    },
+    "qualified_fields": {
+      "type": "object",
+      "properties": {
+        "solar": {
+          "type": "object",
+          "properties": {
+            "segment": { "type": "string", "enum": ["b2b", "b2c"] },
+            "plz": { "type": ["string", "null"] },
+            "verbrauch_kwh_year": { "type": ["number", "null"] },
+            "stromkosten_month_eur": { "type": ["number", "null"] },
+            "objektart": { "type": ["string", "null"] },
+            "dachtyp": { "type": ["string", "null"] },
+            "flaeche_grob": { "type": ["string", "null"] },
+            "speicher_interesse": { "type": ["boolean", "null"] },
+            "wallbox_interesse": { "type": ["boolean", "null"] },
+            "zeitrahmen": { "type": ["string", "null"] }
+          }
+        },
+        "recruiting": {
+          "type": "object",
+          "properties": {
+            "rollen": { "type": ["string", "null"] },
+            "anzahl": { "type": ["number", "null"] },
+            "standort": { "type": ["string", "null"] },
+            "startdatum": { "type": ["string", "null"] },
+            "schicht": { "type": ["boolean", "null"] },
+            "gehalt_range": { "type": ["string", "null"] },
+            "sprache_level": { "type": ["string", "null"] },
+            "unterkunft_support": { "type": ["boolean", "null"] }
+          }
+        },
+        "callcenter": {
+          "type": "object",
+          "properties": {
+            "seats": { "type": ["number", "null"] },
+            "calls_per_day": { "type": ["number", "null"] },
+            "use_cases": { "type": ["string", "null"] },
+            "sprachen": { "type": ["string", "null"] },
+            "crm_system": { "type": ["string", "null"] },
+            "pain": { "type": ["string", "null"] }
+          }
+        }
+      }
+    },
+    "offer": {
+      "type": "object",
+      "properties": {
+        "offer_id": { "type": ["string", "null"] },
+        "package": { "type": ["string", "null"] },
+        "pricing_source": { "type": ["string", "null"] },
+        "link": { "type": ["string", "null"] },
+        "sent": { "type": "boolean" },
+        "valid_until": { "type": ["string", "null"] },
+        "disclaimer": { "type": ["string", "null"] }
+      }
+    },
+    "close": {
+      "type": "object",
+      "properties": {
+        "asked_for_close": { "type": "boolean" },
+        "signed": { "type": ["boolean", "null"] },
+        "payment_status": { "type": ["string", "null"], "enum": [null, "none", "deposit_paid", "paid"] }
+      }
+    },
+    "objections": { "type": "array", "items": { "type": "string" } },
+    "summary": { "type": ["string", "null"] },
+    "followup": {
+      "type": "object",
+      "properties": {
+        "next_followup_at": { "type": ["string", "null"] },
+        "channel": { "type": ["string", "null"], "enum": [null, "call", "email", "sms"] },
+        "max_followups": { "type": ["number", "null"] }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "required": ["consent_ok", "dnc_set_if_requested", "pricing_not_guessed"],
+      "properties": {
+        "consent_ok": { "type": "boolean" },
+        "consent_source": { "type": ["string", "null"] },
+        "dnc_requested": { "type": "boolean" },
+        "dnc_set_if_requested": { "type": "boolean" },
+        "pricing_not_guessed": { "type": "boolean" }
+      }
+    },
+    "timestamps": {
+      "type": "object",
+      "required": ["started_at", "ended_at"],
+      "properties": {
+        "started_at": { "type": "string" },
+        "ended_at": { "type": "string" }
+      }
+    },
+    "meta": {
+      "type": "object",
+      "properties": {
+        "duration_sec": { "type": ["number", "null"] },
+        "talk_ratio": { "type": ["number", "null"] },
+        "interruptions": { "type": ["number", "null"] },
+        "recording_url": { "type": ["string", "null"] },
+        "transcript_url": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

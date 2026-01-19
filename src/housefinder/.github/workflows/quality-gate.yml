@@ -1,0 +1,138 @@
+name: Quality Gate
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  # ═══════════════════════════════════════════════════════════════
+  # Contract Verification
+  # ═══════════════════════════════════════════════════════════════
+  contracts:
+    name: "Contract Check"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check API Contract
+        run: |
+          echo "Checking API Contract..."
+          if [ ! -f "CONTRACTS/api_contract.md" ]; then
+            echo "❌ API Contract fehlt!"
+            exit 1
+          fi
+
+          # Prüfe auf TODOs
+          if grep -i "TODO\|FIXME\|XXX" CONTRACTS/api_contract.md; then
+            echo "⚠️ Offene TODOs in API Contract!"
+          fi
+
+          echo "✅ API Contract vorhanden"
+
+      - name: Check Data Contract
+        run: |
+          echo "Checking Data Contract..."
+          if [ ! -f "CONTRACTS/data_contract.md" ]; then
+            echo "❌ Data Contract fehlt!"
+            exit 1
+          fi
+
+          echo "✅ Data Contract vorhanden"
+
+  # ═══════════════════════════════════════════════════════════════
+  # Production Checklist Items
+  # ═══════════════════════════════════════════════════════════════
+  production-ready:
+    name: "Production Readiness"
+    runs-on: ubuntu-latest
+    if: github.base_ref == 'main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for Rate Limiting
+        run: |
+          echo "Checking for Rate Limiting..."
+          if grep -rn "rateLimit\|rate-limit\|express-rate-limit\|fastify-rate-limit" --include="*.js" --include="*.ts" src/ 2>/dev/null; then
+            echo "✅ Rate Limiting gefunden"
+          else
+            echo "⚠️ Rate Limiting nicht gefunden (prüfe manuell)"
+          fi
+
+      - name: Check for CORS
+        run: |
+          echo "Checking for CORS..."
+          if grep -rn "cors\|CORS" --include="*.js" --include="*.ts" src/ 2>/dev/null; then
+            echo "✅ CORS Config gefunden"
+          else
+            echo "⚠️ CORS nicht gefunden (prüfe manuell)"
+          fi
+
+      - name: Check for Health Endpoint
+        run: |
+          echo "Checking for Health Endpoint..."
+          if grep -rn "/health\|healthCheck\|health-check" --include="*.js" --include="*.ts" src/ 2>/dev/null; then
+            echo "✅ Health Endpoint gefunden"
+          else
+            echo "⚠️ Health Endpoint nicht gefunden"
+          fi
+
+      - name: Check for Swagger/OpenAPI
+        run: |
+          echo "Checking for API Documentation..."
+          if [ -f "swagger.json" ] || [ -f "openapi.yaml" ] || [ -f "openapi.json" ]; then
+            echo "✅ API Spec gefunden"
+          elif grep -rn "swagger\|openapi" --include="*.js" --include="*.ts" src/ 2>/dev/null; then
+            echo "✅ Swagger/OpenAPI Config gefunden"
+          else
+            echo "⚠️ API Documentation nicht gefunden"
+          fi
+
+  # ═══════════════════════════════════════════════════════════════
+  # Scorecard Check
+  # ═══════════════════════════════════════════════════════════════
+  scorecard:
+    name: "Scorecard Validation"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Scorecard
+        run: |
+          echo "Checking Scorecard..."
+          if [ -f "eval/scorecard.yaml" ]; then
+            echo "✅ Scorecard vorhanden"
+            # YAML Syntax Check
+            if command -v python3 &> /dev/null; then
+              python3 -c "import yaml; yaml.safe_load(open('eval/scorecard.yaml'))" && echo "✅ YAML Syntax OK" || echo "❌ YAML Syntax Fehler"
+            fi
+          else
+            echo "⚠️ Scorecard nicht gefunden"
+          fi
+
+      - name: Validate Regression Tests
+        run: |
+          echo "Checking Regression Tests..."
+          if [ -f "eval/regression_tests.yaml" ]; then
+            echo "✅ Regression Tests vorhanden"
+          else
+            echo "⚠️ Regression Tests nicht gefunden"
+          fi
+
+  # ═══════════════════════════════════════════════════════════════
+  # Final Gate
+  # ═══════════════════════════════════════════════════════════════
+  gate:
+    name: "Quality Gate"
+    needs: [contracts, scorecard]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Quality Gate Passed
+        run: |
+          echo "✅ Quality Gate passed"
+          echo ""
+          echo "Checklist für Reviewer:"
+          echo "- [ ] Contracts eingehalten?"
+          echo "- [ ] Tests grün?"
+          echo "- [ ] Production Checklist geprüft?"
+          echo "- [ ] Keine Secrets im Code?"

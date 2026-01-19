@@ -1,0 +1,53 @@
+version: 1.0
+agent: callcenter
+states:
+  - id: C1_open
+    goal: "Open, confirm consent, confirm topic"
+    transitions:
+      - if: "no_time"
+        to: C8_callback
+      - if: "consent_missing_b2c"
+        to: C9_no_consent_end
+      - else:
+        to: C2_discovery
+
+  - id: C2_discovery
+    goal: "Collect operations requirements"
+    max_questions: 6
+    fields:
+      - qualified_fields.callcenter.seats
+      - qualified_fields.callcenter.calls_per_day
+      - qualified_fields.callcenter.use_cases
+      - qualified_fields.callcenter.sprachen
+      - qualified_fields.callcenter.crm_system
+      - qualified_fields.callcenter.pain
+    transitions:
+      - if: "not_interested"
+        to: C7_end
+      - else:
+        to: C3_next_step
+
+  - id: C3_next_step
+    goal: "Summarize and propose offer or follow-up"
+    transitions:
+      - if: "qualified"
+        to: C4_offer
+      - else:
+        to: C8_callback
+
+  - id: C4_offer
+    goal: "Send offer or schedule consult"
+    transitions:
+      - if: "offer_sent"
+        to: C7_end
+      - else:
+        to: C8_callback
+
+  - id: C8_callback
+    goal: "Schedule callback"
+
+  - id: C9_no_consent_end
+    goal: "End call and set DNC if requested"
+
+  - id: C7_end
+    goal: "Close call and log result"

@@ -1,0 +1,39 @@
+{
+  "manifest_version": 1,
+  "project_id": "REPLACE_PROJECT_ID",
+  "project_name": "REPLACE_PROJECT_NAME",
+  "owner": {
+    "name": "Denis Selmanovic",
+    "email": "d.selmanovic@step2job.com"
+  },
+  "default_branch": "main",
+  "stage_branch": "stage",
+  "deploy_target": "kubernetes",
+  "environments": {
+    "stage": {
+      "allowed_branch": "stage"
+    },
+    "prod": {
+      "allowed_branch": "main",
+      "required_approver_emails": [
+        "d.selmanovic@step2job.com"
+      ]
+    }
+  },
+  "rollout": {
+    "rollback": {
+      "stage": {
+        "mode": "always"
+      },
+      "prod": {
+        "mode": "smart",
+        "requires": [
+          "rollback_safe"
+        ]
+      }
+    },
+    "db_migrations": {
+      "default": "rollback_unsafe"
+    }
+  }
+}

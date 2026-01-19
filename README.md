@@ -1,15 +1,25 @@
-# call-agents-platform
+# Integriertes Housefinder-Lead-AI System
 
-Bootstrap repo for supervisor ops, agent flows, evals, and memory.
+## Übersicht
+Dieses Repository ist ein Merge aus Housefinder, lead-builder-mcp, lead-ai-mcp und Lead-aIi-Hoiusefinder--merge. Es erweitert bestehende Funktionen ohne Überschreibungen von UI/Frontends.
 
-## Structure
-- ops/      project, tasks, policies, decisions, risks
-- agents/   flows and playbooks per agent
-- schemas/  JSON schemas for structured outputs
-- eval/     scorecards and regression tests
-- memory/   long-term memory seed (no secrets)
+## Module
+- **Housefinder (src/housefinder/)**: Automatisierte Unterkunftssuche für Monteure mit KI-Agenten (Python).
+- **MCP Server (src/mcp/)**:
+  - lead-builder: Lead-Management (TypeScript).
+  - lead-ai: Lead-AI mit Integrationen wie Vonage, Sipgate, Scraper (TypeScript).
+- **UI/Frontend**: Erweiterte HTML/CSS aus Lead-aIi-Hoiusefinder--merge (ui/).
+- **Tools/Infra**: Zusätzliche Tools und Infrastruktur (tools/, infra/).
 
-## Start
-- Review ops/POLICY.md
-- Update agents/*/flow.yaml and playbook.md
-- Run evals when changing flows
+## Installation
+1. Python-Abhängigkeiten: `pip install -r requirements.txt`
+2. Node.js-Abhängigkeiten: `npm install`
+3. Starte: Siehe infra/docker-compose.yml
+
+## Funktionen
+- KI-gestützte Unterkunftssuche.
+- MCP-basierte Lead-Building mit Integrationen.
+- Erweiterbare UI ohne Überschreibungen.
+
+## Erweiterungen
+Dieses System erweitert sich kontinuierlich. Neue Module können hinzugefügt werden, ohne bestehende zu ändern.

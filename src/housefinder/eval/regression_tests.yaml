@@ -1,0 +1,100 @@
+# Regression Tests
+# Diese Tests müssen bei jeder Änderung grün sein
+
+version: 1
+name: "Regression Test Suite"
+
+tests:
+  # ═══════════════════════════════════════════════════════════════
+  # SYSTEM TESTS
+  # ═══════════════════════════════════════════════════════════════
+  - id: health_ok
+    given: "Server is running"
+    when: "GET /health"
+    then:
+      status: 200
+      body:
+        status: "ok"
+        db.status: "connected"
+
+  - id: api_docs_accessible
+    given: "Server is running"
+    when: "GET /api-docs"
+    then:
+      status: 200
+      content_type: "text/html"
+
+  - id: 404_on_unknown
+    given: "Server is running"
+    when: "GET /unknown-endpoint"
+    then:
+      status: 404
+      body:
+        error: "Not found"
+
+  # ═══════════════════════════════════════════════════════════════
+  # SECURITY TESTS
+  # ═══════════════════════════════════════════════════════════════
+  - id: rate_limit_triggers
+    given: "Server is running"
+    when: "Send 150 requests to /memory/append in 1 minute"
+    then:
+      status: 429
+      body:
+        error: contains "Too many requests"
+
+  - id: auth_required
+    given: "Endpoint requires auth"
+    when: "Request without Authorization header"
+    then:
+      status: 401
+      body:
+        error: contains "Unauthorized"
+
+  - id: invalid_token_rejected
+    given: "Endpoint requires auth"
+    when: "Request with invalid token"
+    then:
+      status: 401
+      body:
+        error: contains "Invalid"
+
+  # ═══════════════════════════════════════════════════════════════
+  # VALIDATION TESTS
+  # ═══════════════════════════════════════════════════════════════
+  - id: invalid_input_400
+    given: "POST endpoint with validation"
+    when: "Send invalid input"
+    then:
+      status: 400
+      body:
+        error: exists
+
+  - id: missing_required_field
+    given: "POST endpoint with required fields"
+    when: "Send request without required field"
+    then:
+      status: 400
+
+  # ═══════════════════════════════════════════════════════════════
+  # ERROR HANDLING TESTS
+  # ═══════════════════════════════════════════════════════════════
+  - id: no_stack_trace_in_prod
+    given: "NODE_ENV=production"
+    when: "Server error occurs"
+    then:
+      body:
+        error: exists
+        stack: not_exists
+
+# ═══════════════════════════════════════════════════════════════
+# EXECUTION
+# ═══════════════════════════════════════════════════════════════
+execution:
+  before_all:
+    - "npm run build"
+    - "docker-compose up -d"
+    - "wait-for-it localhost:8080"
+
+  after_all:
+    - "docker-compose down"
