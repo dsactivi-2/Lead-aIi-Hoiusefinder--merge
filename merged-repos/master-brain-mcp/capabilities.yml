@@ -1,0 +1,220 @@
+# Capabilities Definition
+# Schema Version: 1.0
+#
+# Jede Funktion/Feature wird hier registriert mit zugehörigen Test-Anforderungen.
+
+schema_version: "1.0"
+
+# ═══════════════════════════════════════════════════════════════
+# TEST-REGELN (PFLICHT)
+# ═══════════════════════════════════════════════════════════════
+#
+# Test-Tag Präfixe:
+#   unit:        - Unit Tests (Logik, Funktionen)
+#   http:        - HTTP/REST API Tests
+#   integration: - Integration Tests (API + DB)
+#   e2e:         - End-to-End Journey Tests
+#   smoke:       - Smoke Tests gegen Live-URL
+#   readback:    - Verification Tests (für side_effect=true)
+#
+# Pflicht-Regeln:
+#   - JEDE Capability braucht mindestens 1x unit: Test
+#   - mode=HTTP → mindestens 1x http: Test
+#   - mode=BOTH → mindestens 1x http: UND 1x unit: Test
+#   - side_effect=true → mindestens 1x readback: Test
+#   - criticality in {HIGH, CRITICAL, MONEY, SECURITY} → mindestens 1x integration:
+#   - consumer includes UI → mindestens 1x e2e: Test
+#
+# ═══════════════════════════════════════════════════════════════
+
+# ═══════════════════════════════════════════════════════════════
+# SYSTEM CAPABILITIES (immer vorhanden)
+# ═══════════════════════════════════════════════════════════════
+
+capabilities:
+
+  # --- Health Check (PFLICHT für jedes Backend) ---
+  - name: health_check
+    description: "Health endpoint for monitoring and load balancers"
+    mode: HTTP
+    side_effect: false
+    criticality: HIGH
+    consumer:
+      - API
+      - Monitoring
+    endpoint: "GET /health"
+    tests:
+      - unit:health_returns_ok
+      - http:health_200
+      - http:health_db_status
+      - integration:health_with_db_down
+      - smoke:health_live
+
+  # --- API Documentation (PFLICHT) ---
+  - name: api_docs
+    description: "Swagger/OpenAPI documentation endpoint"
+    mode: HTTP
+    side_effect: false
+    criticality: MEDIUM
+    consumer:
+      - Developer
+    endpoint: "GET /api-docs"
+    tests:
+      - http:swagger_ui_loads
+      - unit:swagger_spec_valid
+
+# ═══════════════════════════════════════════════════════════════
+# AUTH CAPABILITIES (falls Auth benötigt)
+# ═══════════════════════════════════════════════════════════════
+
+  # --- Beispiel: Login ---
+  # - name: user_login
+  #   description: "Authenticate user and return token"
+  #   mode: HTTP
+  #   side_effect: true  # Creates session/token
+  #   criticality: SECURITY
+  #   consumer:
+  #     - API
+  #     - UI
+  #   endpoint: "POST /auth/login"
+  #   tests:
+  #     - unit:validate_credentials
+  #     - http:login_200_valid
+  #     - http:login_401_invalid
+  #     - http:login_429_rate_limit
+  #     - readback:token_valid
+  #     - integration:login_flow
+  #     - e2e:login_ui_journey
+
+# ═══════════════════════════════════════════════════════════════
+# CRUD CAPABILITIES (generisch für alle Ressourcen)
+# ═══════════════════════════════════════════════════════════════
+
+  - name: crud_operations
+    description: "Standard CRUD operations pattern for any resource"
+    mode: HTTP
+    side_effect: true
+    criticality: HIGH
+    consumer:
+      - API
+    tests:
+      # CREATE
+      - unit:validate_create_input
+      - http:create_201
+      - http:create_400_invalid
+      - http:create_401_unauth
+      - readback:created_in_db
+      # READ
+      - http:read_200
+      - http:read_404_not_found
+      - http:list_200
+      - unit:pagination_logic
+      # UPDATE
+      - http:update_200
+      - http:update_400_invalid
+      - http:update_404_not_found
+      # DELETE
+      - http:delete_204
+      - http:delete_404_not_found
+      - readback:deleted_from_db
+      # FLOW
+      - integration:crud_flow
+
+# ═══════════════════════════════════════════════════════════════
+# BUSINESS CAPABILITIES (projekt-spezifisch)
+# ═══════════════════════════════════════════════════════════════
+#
+# Hier projekt-spezifische Capabilities einfügen.
+# Beispiel:
+#
+#   - name: booking_create
+#     description: "Create a new booking"
+#     mode: HTTP
+#     side_effect: true
+#     criticality: HIGH
+#     consumer:
+#       - API
+#       - UI
+#     endpoint: "POST /bookings"
+#     tests:
+#       - unit:validate_booking
+#       - http:booking_201
+#       - integration:booking_flow
+
+# ═══════════════════════════════════════════════════════════════
+# PRODUCTION CAPABILITIES (PFLICHT-Features)
+# ═══════════════════════════════════════════════════════════════
+
+  - name: authentication
+    description: "Auth middleware for protected routes"
+    mode: N/A  # Middleware
+    side_effect: false
+    criticality: SECURITY
+    consumer:
+      - API
+    tests:
+      - unit:token_validation
+      - http:401_no_token
+      - http:401_invalid_token
+      - http:401_expired_token
+      - integration:auth_flow
+
+  - name: rate_limiting
+    description: "Protect API from abuse"
+    mode: N/A  # Middleware, kein Endpoint
+    side_effect: false
+    criticality: SECURITY
+    consumer:
+      - API
+    tests:
+      - unit:rate_limit_config
+      - http:rate_limit_429
+      - integration:rate_limit_window
+
+  - name: input_validation
+    description: "Validate all user inputs"
+    mode: N/A  # Middleware/Helper
+    side_effect: false
+    criticality: SECURITY
+    consumer:
+      - API
+    tests:
+      - unit:validate_string
+      - unit:validate_array
+      - unit:validate_email
+      - http:invalid_input_400
+
+  - name: cors_handling
+    description: "Handle CORS requests"
+    mode: N/A  # Middleware
+    side_effect: false
+    criticality: MEDIUM
+    consumer:
+      - API
+    tests:
+      - http:cors_preflight
+      - http:cors_headers
+
+  - name: error_handling
+    description: "Global error handler"
+    mode: N/A  # Middleware
+    side_effect: false
+    criticality: HIGH
+    consumer:
+      - API
+    tests:
+      - unit:error_format
+      - http:404_not_found
+      - http:500_no_stack_trace
+      - integration:unhandled_error
+
+  - name: graceful_shutdown
+    description: "Clean shutdown on SIGTERM/SIGINT"
+    mode: N/A  # Process handler
+    side_effect: false
+    criticality: HIGH
+    consumer:
+      - Ops
+    tests:
+      - unit:shutdown_handler
+      - integration:shutdown_closes_db

@@ -1,0 +1,112 @@
+# Scorecard für Qualitätsbewertung
+# Wird bei QA/Review durchlaufen
+
+version: 1
+name: "Project Quality Scorecard"
+
+categories:
+  # ═══════════════════════════════════════════════════════════════
+  # SECURITY
+  # ═══════════════════════════════════════════════════════════════
+  - name: security
+    weight: 30
+    checks:
+      - id: rate_limiting
+        title: "Rate Limiting implementiert"
+        severity: hard  # hard = muss bestehen
+        description: "API hat Rate Limiting aktiv"
+
+      - id: input_validation
+        title: "Input Validation überall"
+        severity: hard
+        description: "Alle User-Inputs werden validiert"
+
+      - id: no_secrets
+        title: "Keine Secrets im Code"
+        severity: hard
+        description: "Secrets nur via ENV"
+
+      - id: cors_configured
+        title: "CORS konfiguriert"
+        severity: hard
+        description: "CORS Middleware aktiv"
+
+      - id: auth_implemented
+        title: "Auth korrekt implementiert"
+        severity: hard
+        description: "Geschützte Routes prüfen Token"
+
+  # ═══════════════════════════════════════════════════════════════
+  # RELIABILITY
+  # ═══════════════════════════════════════════════════════════════
+  - name: reliability
+    weight: 25
+    checks:
+      - id: health_check
+        title: "Health Check vorhanden"
+        severity: hard
+        description: "GET /health prüft DB Connection"
+
+      - id: error_handling
+        title: "Error Handler implementiert"
+        severity: hard
+        description: "Globaler Error Handler, keine Stack Traces"
+
+      - id: graceful_shutdown
+        title: "Graceful Shutdown"
+        severity: soft  # soft = sollte bestehen
+        description: "SIGTERM/SIGINT Handler"
+
+      - id: logging
+        title: "Strukturiertes Logging"
+        severity: soft
+        description: "JSON Logs mit pino/winston"
+
+  # ═══════════════════════════════════════════════════════════════
+  # DOCUMENTATION
+  # ═══════════════════════════════════════════════════════════════
+  - name: documentation
+    weight: 20
+    checks:
+      - id: swagger_docs
+        title: "Swagger/OpenAPI Docs"
+        severity: hard
+        description: "/api-docs erreichbar"
+
+      - id: readme
+        title: "README vollständig"
+        severity: soft
+        description: "Setup-Anleitung vorhanden"
+
+      - id: contracts
+        title: "Contracts definiert"
+        severity: hard
+        description: "API + Data Contract vorhanden"
+
+  # ═══════════════════════════════════════════════════════════════
+  # TESTING
+  # ═══════════════════════════════════════════════════════════════
+  - name: testing
+    weight: 25
+    checks:
+      - id: unit_tests
+        title: "Unit Tests vorhanden"
+        severity: hard
+        description: "Mindestens 1 Unit Test pro Feature"
+
+      - id: integration_tests
+        title: "Integration Tests vorhanden"
+        severity: soft
+        description: "API + DB Tests"
+
+      - id: ci_pipeline
+        title: "CI Pipeline aktiv"
+        severity: hard
+        description: "Tests laufen bei PR"
+
+# ═══════════════════════════════════════════════════════════════
+# SCORING
+# ═══════════════════════════════════════════════════════════════
+scoring:
+  pass_threshold: 80  # Mindestens 80% für "PASS"
+  hard_fail_threshold: 100  # Alle "hard" müssen bestehen

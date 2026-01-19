@@ -1,0 +1,130 @@
+# Organization Template Configuration
+# Diese Datei definiert die Pflicht-Anforderungen für alle Projekte
+
+version: 1.0.0
+name: "Activi Project Template"
+mandatory: true
+
+# ═══════════════════════════════════════════════════════════════
+# PFLICHT-DATEIEN
+# ═══════════════════════════════════════════════════════════════
+
+required_files:
+  # Kern-Dokumentation
+  - path: "README.md"
+    description: "Projekt-Übersicht"
+    required_from: "day_1"
+
+  - path: "PROJECT_STATE.md"
+    description: "Single Source of Truth"
+    required_from: "day_1"
+
+  - path: "MASTER_RUNBOOK.md"
+    description: "Entwicklungs-Guide"
+    required_from: "day_1"
+
+  - path: "PRODUCTION_CHECKLIST.md"
+    description: "Go-Live Checks"
+    required_from: "day_1"
+
+  - path: "capabilities.yml"
+    description: "Features + Test-Regeln"
+    required_from: "day_1"
+
+  # Contracts
+  - path: "CONTRACTS/api_contract.md"
+    description: "API Definition"
+    required_from: "before_backend"
+
+  - path: "CONTRACTS/data_contract.md"
+    description: "DB Schema"
+    required_from: "before_backend"
+
+  # Policies
+  - path: "ops/POLICY.md"
+    description: "Projekt-Regeln"
+    required_from: "day_1"
+
+  # Config
+  - path: ".gitignore"
+    description: "Git Excludes"
+    required_from: "day_1"
+
+  - path: ".env.example"
+    description: "ENV Dokumentation"
+    required_from: "before_backend"
+
+# ═══════════════════════════════════════════════════════════════
+# EMPFOHLENE DATEIEN
+# ═══════════════════════════════════════════════════════════════
+
+recommended_files:
+  - path: "docs/ARCHITECTURE.md"
+    description: "System-Architektur"
+
+  - path: "docs/PROJECT_BRIEF.md"
+    description: "Projekt-Übersicht"
+
+  - path: "CHANGELOG.md"
+    description: "Änderungshistorie"
+
+  - path: "eval/scorecard.yaml"
+    description: "Qualitäts-Checks"
+
+# ═══════════════════════════════════════════════════════════════
+# CI REQUIREMENTS
+# ═══════════════════════════════════════════════════════════════
+
+ci_requirements:
+  - name: "structure_check"
+    description: "Prüft ob Pflicht-Dateien vorhanden sind"
+    required: true
+    blocks_merge: true
+
+  - name: "secrets_scan"
+    description: "Scannt nach Secrets im Code"
+    required: true
+    blocks_merge: false  # Warnung, kein Block
+
+  - name: "tests"
+    description: "Unit + Integration Tests"
+    required: true
+    blocks_merge: true
+
+# ═══════════════════════════════════════════════════════════════
+# BRANCH PROTECTION
+# ═══════════════════════════════════════════════════════════════
+
+branch_protection:
+  main:
+    require_pr: true
+    require_approvals: 1
+    require_status_checks: true
+    allow_force_push: false
+    allow_deletion: false
+
+  develop:
+    require_pr: true
+    require_approvals: 1
+    require_status_checks: true
+    allow_force_push: false  # Nur Admins
+    allow_deletion: false
+
+# ═══════════════════════════════════════════════════════════════
+# MERGE STRATEGY
+# ═══════════════════════════════════════════════════════════════
+
+merge_strategy:
+  feature_to_develop: "squash"
+  fix_to_develop: "squash"
+  develop_to_main: "merge"
+  hotfix_to_main: "merge"
+
+# ═══════════════════════════════════════════════════════════════
+# EXCEPTIONS
+# ═══════════════════════════════════════════════════════════════
+
+exceptions:
+  allowed: false
+  approval_required_from: "org_admin"
+  documentation_required: true

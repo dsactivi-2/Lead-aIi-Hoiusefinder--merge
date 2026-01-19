@@ -1,18 +1,22 @@
 {
   "name": "lead-ai-housefinder-mcp",
-  "version": "1.0.0",
-  "description": "Unified MCP Server for Lead AI Housefinder - combines Lead Builder and Cloud Agents tools",
+  "version": "3.0.0",
+  "description": "Unified MCP Server for Lead AI Housefinder - 87 Tools: Auth, Scraper, Call, Housecall, AI-Agent, Lead-Builder, Cloud-Agents, Master-Brain",
   "type": "module",
   "main": "src/server.ts",
   "scripts": {
     "start": "npx tsx src/server.ts",
-    "dev": "npx tsx --watch src/server.ts"
+    "dev": "npx tsx --watch src/server.ts",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.1",
-    "@types/jsonwebtoken": "^9.0.10",
-    "@types/uuid": "^10.0.0",
+    "@anthropic-ai/sdk": "^0.30.0",
+    "better-sqlite3": "^11.0.0",
+    "dotenv": "^16.4.0",
     "jsonwebtoken": "^9.0.3",
+    "openai": "^4.68.0",
     "puppeteer": "^24.35.0",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-adblocker": "^2.13.6",
@@ -22,7 +26,10 @@
     "zod": "^3.24.0"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^22.19.7",
+    "@types/uuid": "^10.0.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0"
   }

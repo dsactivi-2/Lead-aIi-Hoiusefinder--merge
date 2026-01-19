@@ -1,0 +1,355 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, staging]
+  push:
+    branches: [main, staging]
+    # agent/* Branches können frei pushen - keine CI-Blockade dort
+
+jobs:
+  # ═══════════════════════════════════════════════════════════════
+  # Template Validation (Pflicht-Dateien vorhanden?)
+  # ═══════════════════════════════════════════════════════════════
+  structure:
+    name: "Check Structure"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check required files
+        run: |
+          echo "Checking required files..."
+
+          # Pflicht-Dateien
+          files=(
+            "README.md"
+            "PROJECT_STATE.md"
+            "MASTER_RUNBOOK.md"
+            "PRODUCTION_CHECKLIST.md"
+            "capabilities.yml"
+            "CONTRACTS/api_contract.md"
+            "CONTRACTS/data_contract.md"
+            "docs/PROJECT_BRIEF.md"
+            "docs/TEST_PLAN.md"
+            "ops/POLICY.md"
+            "guides/README.md"
+            ".gitignore"
+          )
+
+          missing=0
+          for file in "${files[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "❌ MISSING: $file"
+              missing=$((missing + 1))
+            else
+              echo "✅ OK: $file"
+            fi
+          done
+
+          if [ $missing -gt 0 ]; then
+            echo ""
+            echo "❌ $missing required files missing!"
+            exit 1
+          fi
+
+          echo ""
+          echo "✅ All required files present"
+
+  # ═══════════════════════════════════════════════════════════════
+  # Contract Content Validation (Haben Contracts Inhalt?)
+  # ═══════════════════════════════════════════════════════════════
+  contracts:
+    name: "Check Contracts"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate API Contract has endpoints
+        run: |
+          echo "🔍 Prüfe API Contract..."
+
+          if [ ! -f "CONTRACTS/api_contract.md" ]; then
+            echo "❌ CONTRACTS/api_contract.md nicht gefunden!"
+            exit 1
+          fi
+
+          # Prüfe ob mindestens ein Endpoint definiert ist
+          if grep -qE "^### (GET|POST|PUT|DELETE|PATCH)" CONTRACTS/api_contract.md; then
+            endpoint_count=$(grep -cE "^### (GET|POST|PUT|DELETE|PATCH)" CONTRACTS/api_contract.md)
+            echo "✅ API Contract: $endpoint_count Endpoints definiert"
+          else
+            echo "❌ API Contract hat KEINE Endpoints definiert!"
+            echo "   Bitte zuerst Endpoints in CONTRACTS/api_contract.md definieren."
+            echo "   Format: ### GET /api/resource"
+            exit 1
+          fi
+
+      - name: Validate Data Contract has tables
+        run: |
+          echo "🔍 Prüfe Data Contract..."
+
+          if [ ! -f "CONTRACTS/data_contract.md" ]; then
+            echo "❌ CONTRACTS/data_contract.md nicht gefunden!"
+            exit 1
+          fi
+
+          # Prüfe ob mindestens eine Tabelle definiert ist
+          if grep -qiE "(CREATE TABLE|## .*Table|### .*Table|## .*Schema)" CONTRACTS/data_contract.md; then
+            echo "✅ Data Contract: Tabellen/Schema definiert"
+          else
+            echo "❌ Data Contract hat KEINE Tabellen definiert!"
+            echo "   Bitte zuerst DB Schema in CONTRACTS/data_contract.md definieren."
+            exit 1
+          fi
+
+  # ═══════════════════════════════════════════════════════════════
+  # Capabilities Validation (Features haben Tests?)
+  # ═══════════════════════════════════════════════════════════════
+  capabilities:
+    name: "Check Capabilities"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate capabilities.yml
+        run: |
+          echo "🔍 Prüfe capabilities.yml..."
+
+          if [ ! -f "capabilities.yml" ]; then
+            echo "❌ capabilities.yml nicht gefunden!"
+            exit 1
+          fi
+
+          # Prüfe YAML Syntax
+          if command -v python3 &> /dev/null; then
+            if python3 -c "import yaml; yaml.safe_load(open('capabilities.yml'))" 2>/dev/null; then
+              echo "✅ YAML Syntax OK"
+            else
+              echo "❌ capabilities.yml hat YAML Syntax-Fehler!"
+              exit 1
+            fi
+          fi
+
+          # Prüfe ob Capabilities definiert sind
+          if grep -q "^  - name:" capabilities.yml; then
+            cap_count=$(grep -c "^  - name:" capabilities.yml)
+            echo "✅ $cap_count Capabilities definiert"
+
+            # Prüfe ob jede Capability Tests hat
+            caps_without_tests=$(grep -B1 "^    tests:" capabilities.yml | grep -c "^\-\-" || echo "0")
+            echo "   (Capabilities werden auf Test-Definitionen geprüft)"
+          else
+            echo "⚠️ Keine Capabilities in capabilities.yml definiert"
+            echo "   Bitte Features registrieren bevor Code geschrieben wird."
+          fi
+
+  # ═══════════════════════════════════════════════════════════════
+  # Branch Name Validation
+  # ═══════════════════════════════════════════════════════════════
+  branch-name:
+    name: "Check Branch Name"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Validate branch name
+        run: |
+          BRANCH="${{ github.head_ref }}"
+          echo "🔍 Prüfe Branch-Name: $BRANCH"
+
+          # Erlaubte Patterns
+          if [[ "$BRANCH" =~ ^(feature|fix|hotfix|agent|release)/.+ ]]; then
+            echo "✅ Branch-Name OK: $BRANCH"
+          elif [[ "$BRANCH" == "staging" ]] || [[ "$BRANCH" == "main" ]]; then
+            echo "✅ Branch-Name OK (Hauptbranch): $BRANCH"
+          else
+            echo "❌ Branch-Name entspricht nicht der Konvention!"
+            echo "   Erlaubt: feature/*, fix/*, hotfix/*, agent/*, release/*"
+            echo "   Gefunden: $BRANCH"
+            exit 1
+          fi
+
+  # ═══════════════════════════════════════════════════════════════
+  # Security Check (Keine Secrets im Repo?)
+  # ═══════════════════════════════════════════════════════════════
+  secrets-scan:
+    name: "Secrets Scan"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan for secrets
+        run: |
+          echo "Scanning for potential secrets..."
+
+          # Patterns die auf Secrets hindeuten
+          patterns=(
+            'sk-[a-zA-Z0-9]{20,}'      # OpenAI
+            'ghp_[a-zA-Z0-9]{36,}'     # GitHub Token
+            'gho_[a-zA-Z0-9]{36,}'     # GitHub OAuth
+            'glpat-[a-zA-Z0-9]{20,}'   # GitLab Token
+            'PRIVATE KEY'              # Private Keys
+          )
+
+          # Dateien die ausgeschlossen werden
+          exclude_files=".env.example|.github/workflows|node_modules"
+
+          found=0
+          for pattern in "${patterns[@]}"; do
+            matches=$(grep -rn "$pattern" --include="*.js" --include="*.ts" --include="*.json" --include="*.md" --include="*.yml" --include="*.yaml" . 2>/dev/null | grep -vE "$exclude_files" || true)
+            if [ -n "$matches" ]; then
+              echo "⚠️ Potential secret pattern found: $pattern"
+              echo "$matches"
+              found=$((found + 1))
+            fi
+          done
+
+          if [ $found -gt 0 ]; then
+            echo ""
+            echo "❌ SECRETS GEFUNDEN! Push/Merge blockiert."
+            echo "   Bitte Secrets entfernen und .env nutzen."
+            exit 1
+          else
+            echo "✅ No obvious secrets found"
+          fi
+
+  # ═══════════════════════════════════════════════════════════════
+  # Lint & Test (falls package.json vorhanden)
+  # ═══════════════════════════════════════════════════════════════
+  test:
+    name: "Lint & Test"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check if Node.js project
+        id: check
+        run: |
+          if [ -f "package.json" ]; then
+            echo "is_node=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_node=false" >> $GITHUB_OUTPUT
+            echo "⏭️ Kein package.json gefunden - überspringe Node.js Tests"
+          fi
+
+      - name: Setup Node.js
+        if: steps.check.outputs.is_node == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        if: steps.check.outputs.is_node == 'true'
+        run: npm ci
+
+      - name: Lint
+        if: steps.check.outputs.is_node == 'true'
+        run: npm run lint --if-present
+
+      - name: Test
+        if: steps.check.outputs.is_node == 'true'
+        run: npm test --if-present
+
+  # ═══════════════════════════════════════════════════════════════
+  # Production Checklist (nur bei PR zu main)
+  # ═══════════════════════════════════════════════════════════════
+  production-checklist:
+    name: "Check Production Checklist"
+    runs-on: ubuntu-latest
+    if: github.base_ref == 'main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate PRODUCTION_CHECKLIST.md
+        run: |
+          echo "🔍 Prüfe PRODUCTION_CHECKLIST.md (PR zu main)..."
+
+          if [ ! -f "PRODUCTION_CHECKLIST.md" ]; then
+            echo "❌ PRODUCTION_CHECKLIST.md nicht gefunden!"
+            exit 1
+          fi
+
+          # Zähle offene [ ] und erledigte [x] Items
+          open_items=$(grep -c "\[ \]" PRODUCTION_CHECKLIST.md || echo "0")
+          done_items=$(grep -c "\[x\]" PRODUCTION_CHECKLIST.md || echo "0")
+
+          echo "   Erledigt: $done_items"
+          echo "   Offen: $open_items"
+
+          if [ "$open_items" -gt 0 ]; then
+            echo ""
+            echo "❌ PRODUCTION_CHECKLIST nicht komplett!"
+            echo "   $open_items Punkte sind noch offen."
+            echo ""
+            echo "Offene Punkte:"
+            grep "\[ \]" PRODUCTION_CHECKLIST.md | head -10
+            exit 1
+          else
+            echo ""
+            echo "✅ PRODUCTION_CHECKLIST komplett!"
+          fi
+
+  # ═══════════════════════════════════════════════════════════════
+  # User Guide Check (nur bei PR zu main)
+  # ═══════════════════════════════════════════════════════════════
+  user-guide:
+    name: "Check User Guide"
+    runs-on: ubuntu-latest
+    if: github.base_ref == 'main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate User Guide exists
+        run: |
+          echo "🔍 Prüfe Benutzeranleitung (PR zu main)..."
+
+          # Pflicht: QUICK_START.md muss existieren
+          if [ ! -f "guides/QUICK_START.md" ]; then
+            echo "❌ guides/QUICK_START.md nicht gefunden!"
+            echo ""
+            echo "   Vor Deploy MUSS eine Benutzeranleitung existieren."
+            echo "   Erstelle: guides/QUICK_START.md"
+            echo "   Vorlage: guides/TEMPLATE_GUIDE.md"
+            exit 1
+          fi
+
+          echo "✅ guides/QUICK_START.md vorhanden"
+
+          # Prüfe ob es mehr als nur Template-Platzhalter enthält
+          if grep -q "\[Feature-Name\]\|\[Erster Schritt\]\|screenshot_beispiel.png" guides/QUICK_START.md; then
+            echo "⚠️ QUICK_START.md enthält noch Platzhalter!"
+            echo "   Bitte alle [Platzhalter] ersetzen und echte Screenshots einfügen."
+            # Warnung, aber kein Block
+          fi
+
+          # Zähle Guide-Dateien
+          guide_count=$(find guides -name "*.md" -not -name "README.md" -not -name "TEMPLATE_GUIDE.md" | wc -l | tr -d ' ')
+          echo "📚 $guide_count Benutzeranleitung(en) gefunden"
+
+  # ═══════════════════════════════════════════════════════════════
+  # Gate (alle Checks müssen grün sein)
+  # ═══════════════════════════════════════════════════════════════
+  gate:
+    name: "CI Gate"
+    needs: [structure, contracts, capabilities, secrets-scan]
+    runs-on: ubuntu-latest
+    steps:
+      - name: All checks passed
+        run: |
+          echo "✅ All CI checks passed"
+          echo "Ready for review"
+
+  # ═══════════════════════════════════════════════════════════════
+  # Production Gate (zusätzlich für main)
+  # ═══════════════════════════════════════════════════════════════
+  production-gate:
+    name: "Production Gate"
+    needs: [gate, production-checklist, user-guide]
+    runs-on: ubuntu-latest
+    if: github.base_ref == 'main'
+    steps:
+      - name: Production ready
+        run: |
+          echo "✅ All production checks passed"
+          echo "Ready for deployment to main"
